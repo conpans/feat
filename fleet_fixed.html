@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>P Fleet Toolkit</title>
+  <style>
+    :root {
+      --bg: #070b11;
+      --sf: #0d1117;
+      --s2: #141922;
+      --s3: #1a1f2a;
+      --bd: #293241;
+      --tx: #b8bcc6;
+      --dm: #768196;
+      --br: #e8eaf0;
+      --ac: #00bfa5;
+      --ad: rgba(0, 191, 165, .1);
+      --rd: #d04040;
+      --rdd: rgba(208, 64, 64, .1);
+      --bl: #3080d0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--bd); }
+    button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+    input, textarea, select { font-family: inherit; outline: none; }
+
+    .hdr {
+      height: 34px; background: var(--sf); border-bottom: 1px solid var(--bd);
+      display: flex; align-items: center; padding: 0 8px; gap: 8px; flex-shrink: 0; z-index: 20;
+    }
+    .hdr .logo { font-size: 14px; font-weight: 700; color: var(--ac); }
+    .hdr .logo span { color: var(--dm); font-weight: 400; }
+    .hdr nav { display: flex; gap: 4px; margin-left: 6px; }
+    .hdr nav a { padding: 4px 8px; font-size: 11px; font-weight: 500; color: var(--dm); text-decoration: none; }
+    .hdr nav a.active { color: var(--ac); }
+    .hdr-r { margin-left: auto; }
+    .strig { background: none; border: 1px solid var(--bd); padding: 3px 8px; color: var(--dm); font-size: 10px; }
+    .strig:hover { border-color: var(--ac); color: var(--tx); }
+
+    .page { display: none; flex: 1; overflow: hidden; }
+    .page.active { display: flex; }
+    #pageMap { flex-direction: column; }
+    .mwrap { flex: 1; display: flex; flex-direction: column; padding: 4px; overflow: hidden; }
+    .map-grid {
+      flex: 1; display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px; overflow: hidden;
+    }
+    .inp {
+      grid-column: 1; grid-row: 1 / 3; background: var(--sf); border: 1px solid var(--bd);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .inp-h {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--dm);
+      padding: 6px; border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 6px;
+    }
+    .inp-h .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ac); }
+    .inp-b { flex: 1; overflow-y: auto; padding: 8px; font-size: 12px; }
+    .inp-empty { display:flex; align-items:center; justify-content:center; height:100%; color:var(--dm); opacity:.6; }
+    .inp-fn { font-size: 18px; font-weight: 700; color: var(--br); }
+    .inp-v { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--ac); margin-bottom: 6px; display: block; }
+    .inp-img { width: 100%; aspect-ratio: 1; object-fit: cover; margin: 6px 0; border:1px solid var(--bd); }
+    .inp-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--bd); font-size:11px; gap:8px; }
+    .inp-row .l { color: var(--dm); }
+    .inp-row .v { color: var(--tx); font-weight: 500; text-align:right; }
+    .inp-sect { font-size: 10px; text-transform: uppercase; letter-spacing: .7px; color: var(--ac); margin-top: 8px; margin-bottom: 4px; }
+    .inp-ch { padding: 5px 6px; background: var(--s2); border-bottom: 1px solid var(--bd); font-size: 11px; display:flex; justify-content:space-between; }
+    .inp-ch .n { font-weight: 600; color: var(--br); }
+
+    .area {
+      background: var(--sf); border: 1px solid var(--bd); display:flex; flex-direction:column; overflow:hidden;
+    }
+    .bh { display:flex; align-items:center; padding: 0 6px; border-bottom:1px solid var(--bd); flex-shrink:0; height: 30px; gap: 4px; }
+    .bh .bl { font-size: 12px; font-weight: 700; color: var(--ac); }
+    .bh .ba {
+      font-size: 10px; padding: 2px 6px; background:none; color:var(--dm); border:1px solid var(--bd); margin-left:auto;
+    }
+    .bh .ba + .ba { margin-left: 4px; }
+    .bh .ba:hover { border-color: var(--ac); color: var(--ac); }
+    .ra { flex:1; display:flex; overflow-x:auto; overflow-y:hidden; }
+    .rc { display:flex; flex-direction:column; flex:1; min-width: 120px; border-right:1px solid var(--bd); }
+    .rc:last-child { border-right:none; }
+    .rn {
+      text-align:center; min-height: 34px; border-bottom:1px solid var(--bd); font-size:16px; font-weight:800;
+      color: var(--ac); flex-shrink:0; background:var(--s2); line-height: 1.2; position:relative; padding-top: 3px;
+    }
+    .rn .rs { font-size: 9px; text-transform: uppercase; color: var(--dm); display:block; }
+    .rn .rx { position:absolute; top:4px; right:6px; font-size:10px; color:var(--dm); cursor:pointer; opacity:0; }
+    .rn:hover .rx { opacity:1; }
+    .rn .rx:hover { color:var(--rd); }
+    .ai { flex:1; display:flex; min-height:0; overflow-y:auto; overflow-x:hidden; }
+    .as { flex:1; position:relative; min-height:100%; }
+    .as.ls { border-right:1px solid rgba(0,191,165,.06); }
+    .as.rs2 { border-left:1px solid rgba(0,191,165,.06); }
+    .ac2 { width:8px; flex-shrink:0; background:repeating-linear-gradient(180deg, rgba(0,191,165,.08) 0, rgba(0,191,165,.08) 3px, transparent 3px, transparent 8px); }
+    .t {
+      position:absolute; width:60px; height:60px; background:var(--s3); border:1px solid var(--bd); display:flex; flex-direction:column;
+      align-items:center; justify-content:flex-end; cursor:grab; user-select:none; z-index:10; left:50%; transform:translateX(-50%);
+      overflow:hidden; transition:border-color .08s;
+    }
+    .t:hover { border-color:var(--ac); z-index:20; }
+    .t.dragging { opacity:.6; cursor:grabbing; z-index:30; }
+    .t .ti, .t .tph, .cslot .cdb-img, .np-img-item img, .cp-img, .fp-img, .fp-ph, .ref-body textarea, .sinp, .modal input, .modal select, .modal textarea, .iup img { width:100%; height:100%; }
+    .t .ti { position:absolute; inset:0; object-fit:cover; pointer-events:none; }
+    .t .tph { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; background:#1a2330; }
+    .t .tph .ticon { font-size:22px; opacity:.5; color:var(--ac); }
+    .t .tn, .t .tv { position:relative; z-index:2; width:100%; text-align:center; pointer-events:none; }
+    .t .tn { background:rgba(0,0,0,.7); font-size:8px; font-weight:700; text-transform:uppercase; color:var(--br); padding:2px 0; line-height:1.1; }
+    .t .tv { background:rgba(0,0,0,.5); font-size:7px; color:var(--dm); text-transform:uppercase; padding:0 0 2px; line-height:1.1; }
+
+    .rstrip { background:var(--sf); border:1px solid var(--bd); margin-top:4px; padding:4px 6px; display:flex; align-items:center; gap:4px; flex-shrink:0; min-height:30px; }
+    .rstrip-l { font-size:10px; text-transform:uppercase; color:var(--dm); flex-shrink:0; }
+    .rch { padding:3px 6px; background:var(--s2); border:1px solid var(--bd); font-size:10px; color:var(--tx); cursor:pointer; white-space:nowrap; flex-shrink:0; }
+    .rch:hover { border-color:var(--ac); }
+    .rnone { font-size:10px; color:var(--dm); opacity:.6; }
+
+    .btn-sm { padding:4px 8px; font-size:11px; font-weight:500; }
+    .btn-a { background:var(--ad); color:var(--ac); border:1px solid rgba(0,191,165,.2); }
+    .btn-a:hover { background:var(--ac); color:#000; }
+    .btn-d { background:var(--rdd); color:var(--rd); border:1px solid rgba(208,64,64,.15); }
+    .btn-d:hover { background:var(--rd); color:#fff; }
+    .btn-n { background:none; color:var(--tx); border:1px solid var(--bd); }
+    .btn-n:hover { border-color:var(--ac); color:var(--ac); }
+    .bbtn { font-size:11px; color:var(--dm); background:none; border:1px solid var(--bd); padding:4px 8px; display:inline-block; }
+    .bbtn:hover { color:var(--ac); border-color:var(--ac); }
+    .shdr { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--ac); margin:8px 0 4px; border-bottom:1px solid var(--bd); padding-bottom:3px; display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap; }
+    .shdr .abtn { font-size:10px; padding:2px 6px; background:var(--ad); color:var(--ac); border:1px solid rgba(0,191,165,.2); cursor:pointer; text-transform:none; letter-spacing:0; font-weight:500; }
+    .shdr .abtn:hover { background:var(--ac); color:#000; }
+
+    .np { background:var(--s2); border:1px solid var(--bd); margin-bottom:4px; display:flex; min-height:52px; }
+    .np-imgs { display:flex; flex-direction:column; gap:1px; flex-shrink:0; border-right:1px solid var(--bd); width:86px; }
+    .np-imgs:empty { display:none; width:0; border:none; }
+    .np-img-item { position:relative; width:86px; height:64px; overflow:hidden; flex-shrink:0; }
+    .np-img-item img { object-fit:contain; background:var(--s3); display:block; cursor:pointer; }
+    .np-img-del, .np-img-mv { position:absolute; width:16px; height:16px; color:#fff; font-size:9px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; }
+    .np-img-del { top:0; right:0; background:rgba(208,64,64,.8); }
+    .np-img-mv { background:rgba(0,191,165,.7); font-size:8px; }
+    .np-mv-up { top:0; left:0; }
+    .np-mv-dn { bottom:0; left:0; }
+    .np-img-item:hover .np-img-del, .np-img-item:hover .np-img-mv { display:flex; }
+    .np-right { flex:1; display:flex; flex-direction:column; padding:4px 6px; min-width:0; }
+    .np-text { font-size:12px; line-height:1.45; color:var(--tx); flex:1; word-break:break-word; }
+    .np-text strong { color:var(--br); }
+    .np-text em { color:var(--ac); }
+    .np-text code { background:var(--s3); padding:0 2px; font-family:monospace; font-size:11px; color:var(--br); }
+    .np-meta { font-size:10px; color:var(--dm); display:flex; justify-content:space-between; margin-top:4px; gap:6px; }
+    .np-meta span { cursor:pointer; }
+    .np-meta span:hover { color:var(--ac); }
+    .np-meta .del:hover { color:var(--rd); }
+    .np-edit-ta { width:100%; min-height:70px; background:var(--s3); border:1px solid var(--ac); color:var(--tx); font-size:12px; resize:vertical; padding:6px; }
+    .np-edit-bar { display:flex; gap:4px; align-items:center; margin-top:4px; }
+    .np-edit-bar .hint { font-size:10px; color:var(--dm); flex:1; }
+    .note-empty { font-size:11px; color:var(--dm); opacity:.6; padding:4px; }
+
+    #pageFrame .fp-wrap, #pageChamber .cp-wrap { display:flex; gap:8px; flex:1; overflow:hidden; }
+    .fp-left, .cp-left { width:260px; flex-shrink:0; overflow-y:auto; }
+    .fp-right, .cp-right { flex:1; overflow-y:auto; min-width:0; }
+    .fp-card, .cp-card { background:var(--sf); border:1px solid var(--bd); padding:6px; margin-bottom:6px; }
+    .fp-img, .fp-ph { aspect-ratio:1; display:block; cursor:pointer; object-fit:cover; }
+    .fp-ph { background:var(--s3); display:flex; align-items:center; justify-content:center; color:var(--dm); font-size:12px; flex-direction:column; }
+    .fp-ph:hover { color:var(--ac); }
+    .fp-ph .phi { font-size:28px; opacity:.4; }
+    .fp-info { font-size:12px; margin-top:6px; }
+    .fp-info h1 { font-size:18px; font-weight:700; color:var(--br); margin-bottom:2px; }
+    .fp-info .fmv { font-size:10px; font-weight:600; text-transform:uppercase; color:var(--ac); display:block; margin-bottom:6px; }
+    .fp-irow { display:flex; justify-content:space-between; padding:4px 0; font-size:11px; border-bottom:1px solid var(--bd); gap:8px; }
+    .fp-irow .l { color:var(--dm); }
+    .fp-irow .v { color:var(--tx); font-weight:500; text-align:right; }
+    .fp-actions { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+
+    .cdiag { background:var(--s2); border:1px solid var(--bd); padding:4px; display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(4, 56px); gap:4px; }
+    .cslot {
+      background:var(--s3); border:1px dashed var(--bd); display:flex; flex-direction:column; align-items:center; justify-content:center;
+      cursor:pointer; overflow:hidden; position:relative; font-size:10px; color:var(--dm);
+    }
+    .cslot:hover { border-color:var(--ac); color:var(--ac); }
+    .cslot.has-ch { border-style:solid; }
+    .cslot .cdb-img { position:absolute; inset:0; object-fit:cover; opacity:.35; }
+    .cslot .cdb-n { font-size:11px; font-weight:700; color:var(--br); position:relative; z-index:1; }
+    .cslot .cdb-p { font-size:9px; color:var(--dm); position:relative; z-index:1; }
+    .cslot.is-tc { border:2px solid var(--ac); font-size:14px; font-weight:800; color:var(--ac); border-style:solid; }
+
+    .cp-img { max-height:120px; object-fit:cover; display:block; cursor:pointer; }
+    .cp-ph { width:100%; height:90px; background:var(--s3); display:flex; align-items:center; justify-content:center; color:var(--dm); font-size:12px; cursor:pointer; }
+    .cp-ph:hover { color:var(--ac); }
+    .cp-fields { font-size:12px; }
+    .cp-fl { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+    .cp-fl span { min-width:50px; color:var(--dm); font-size:11px; }
+    .cp-fl input { flex:1; background:var(--s2); border:1px solid var(--bd); color:var(--tx); padding:4px 6px; font-size:12px; }
+
+    .sub-jumps { display:flex; gap:4px; flex-wrap:wrap; position:sticky; top:0; z-index:5; background:var(--bg); padding:4px 0; }
+    .sub-jump { padding:4px 8px; font-size:11px; font-weight:600; color:var(--dm); background:var(--s2); border:1px solid var(--bd); cursor:pointer; }
+    .sub-jump:hover { color:var(--ac); border-color:var(--ac); }
+    .sub-block { border:1px solid var(--bd); margin-bottom:6px; background:var(--sf); scroll-margin-top:28px; }
+    .sub-block-hdr { background:var(--s2); padding:5px 8px; font-size:11px; font-weight:700; color:var(--ac); text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid var(--bd); display:flex; justify-content:space-between; align-items:center; gap:4px; flex-wrap:wrap; }
+    .sub-inner { padding:6px; }
+
+    .ref-tabs { display:flex; gap:0; border-bottom:1px solid var(--bd); }
+    .ref-tab { padding:6px 10px; font-size:12px; font-weight:600; color:var(--dm); background:var(--s2); border:1px solid var(--bd); border-bottom:none; cursor:pointer; margin-bottom:-1px; }
+    .ref-tab.active { color:var(--ac); background:var(--sf); border-bottom-color:var(--sf); }
+    .ref-body { border:1px solid var(--bd); border-top:none; padding:8px; flex:1; display:flex; }
+    .ref-body textarea { background:transparent; border:none; color:var(--tx); font-size:12px; resize:none; font-family:inherit; line-height:1.5; }
+
+    .settings-section { margin-bottom:12px; }
+    .settings-section h3 { font-size:12px; font-weight:700; color:var(--br); text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid var(--bd); padding-bottom:2px; }
+    .settings-row { display:flex; gap:6px; flex-wrap:wrap; }
+
+    .sov {
+      position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:500; display:none;
+      align-items:flex-start; justify-content:center; padding-top:40px;
+    }
+    .sov.open { display:flex; }
+    .swrap { width:560px; max-width:90vw; background:var(--sf); border:1px solid var(--bd); overflow:hidden; }
+    .sinp { padding:10px 12px; background:transparent; border:none; border-bottom:1px solid var(--bd); color:var(--br); font-size:14px; height:auto; }
+    .sres { max-height:220px; overflow-y:auto; padding:4px; }
+    .sr { padding:6px 8px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+    .sr:hover { background:var(--ad); }
+    .srt { font-size:10px; text-transform:uppercase; padding:2px 4px; font-weight:600; }
+    .srt.frame { color:var(--ac); }
+    .srt.chamber { color:var(--bl); }
+    .sri { flex:1; }
+    .srn { font-size:12px; font-weight:600; color:var(--br); }
+    .srd { font-size:10px; color:var(--dm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sempty { padding:12px; text-align:center; color:var(--dm); }
+
+    .mov { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:600; display:none; align-items:center; justify-content:center; }
+    .mov.open { display:flex; }
+    .modal { width:340px; max-width:92vw; background:var(--sf); border:1px solid var(--bd); padding:10px; }
+    .modal h2 { font-size:16px; font-weight:700; color:var(--br); margin-bottom:8px; }
+    .modal label { display:block; font-size:11px; color:var(--dm); margin-bottom:2px; margin-top:6px; }
+    .modal input, .modal select, .modal textarea { width:100%; padding:6px 8px; background:var(--s2); border:1px solid var(--bd); color:var(--tx); font-size:12px; height:auto; }
+    .mactions { display:flex; justify-content:flex-end; gap:6px; margin-top:8px; }
+    .iup {
+      width:64px; height:64px; border:1px solid var(--bd); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--dm); font-size:11px; position:relative; overflow:hidden; background:var(--s2);
+    }
+    .iup img { object-fit:cover; position:absolute; inset:0; }
+    .iup input[type=file] { display:none; }
+    .img-ov { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:800; display:none; align-items:center; justify-content:center; cursor:pointer; }
+    .img-ov.open { display:flex; }
+    .img-ov img { max-width:90vw; max-height:90vh; object-fit:contain; }
+  </style>
+</head>
+<body>
+  <div class="hdr">
+    <div class="logo">P Fleet <span>Toolkit</span></div>
+    <nav id="nav">
+      <a href="#/map" data-r="map" class="active">Map</a>
+      <a href="#/search" data-r="search">Search</a>
+      <a href="#/ref" data-r="ref">Ref</a>
+      <a href="#/settings" data-r="settings">Settings</a>
+    </nav>
+    <div class="hdr-r"><div class="strig" id="sTrig">🔍 <kbd>Ctrl+K</kbd></div></div>
+  </div>
+
+  <div class="page active" id="pageMap">
+    <div class="mwrap">
+      <div class="map-grid">
+        <div class="inp">
+          <div class="inp-h"><div class="dot"></div>Inspector</div>
+          <div class="inp-b" id="infoB"><div class="inp-empty">Click a tool</div></div>
+        </div>
+
+        <div class="area">
+          <div class="bh"><span class="bl">Upper Area</span><button class="ba" onclick="addRow('u')">+Row</button><button class="ba" onclick="openModNew('u')">+Tool</button></div>
+          <div class="ra" id="rau"></div>
+        </div>
+
+        <div class="area">
+          <div class="bh"><span class="bl">Lower Area</span><button class="ba" onclick="addRow('d')">+Row</button><button class="ba" onclick="openModNew('d')">+Tool</button></div>
+          <div class="ra" id="rad"></div>
+        </div>
+      </div>
+
+      <div class="rstrip"><span class="rstrip-l">Recent▸</span><div id="recentC" style="display:flex;gap:4px;align-items:center;overflow-x:auto;flex:1;"><span class="rnone">—</span></div></div>
+    </div>
+  </div>
+
+  <div class="page" id="pageFrame">
+    <div style="padding:6px;display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <button class="bbtn" onclick="goMap()" style="align-self:flex-start;margin-bottom:4px;">← Map</button>
+      <div id="frameDet" class="fp-wrap"></div>
+    </div>
+  </div>
+
+  <div class="page" id="pageChamber">
+    <div style="padding:6px;display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <button class="bbtn" id="chBack" style="align-self:flex-start;margin-bottom:4px;">← Frame</button>
+      <div id="chambDet" class="cp-wrap"></div>
+    </div>
+  </div>
+
+  <div class="page" id="pageRef">
+    <div style="flex:1;display:flex;flex-direction:column;padding:6px;overflow:hidden;">
+      <div style="font-size:16px;font-weight:700;color:var(--br);margin-bottom:6px;">Reference</div>
+      <div class="ref-tabs" id="refTabs"></div>
+      <div class="ref-body"><textarea id="refTA" placeholder="General notes…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="page" id="pageSettings">
+    <div style="flex:1;display:flex;flex-direction:column;padding:6px;overflow-y:auto;">
+      <div class="settings-section">
+        <h3>Backup</h3>
+        <div class="settings-row">
+          <button class="btn-sm btn-a" onclick="exportData()">Export</button>
+          <button class="btn-sm btn-n" onclick="$('impF').click()">Import</button>
+          <input type="file" id="impF" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Reset</h3>
+        <button class="btn-sm btn-d" onclick="factoryReset()">Factory Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="pageSearch">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--dm);">Ctrl+K to search</div>
+  </div>
+
+  <div class="sov" id="sov">
+    <div class="swrap">
+      <input class="sinp" id="sinp" placeholder="Search…" autocomplete="off">
+      <div class="sres" id="sres"><div class="sempty">Type to search</div></div>
+    </div>
+  </div>
+
+  <div class="mov" id="addM">
+    <div class="modal">
+      <h2 id="mT">Add Frame</h2>
+      <label>Name</label><input id="mN">
+      <label>Vendor</label>
+      <select id="mV"><option>Lam Research</option><option>TEL</option><option>Other</option></select>
+      <label>Area</label>
+      <select id="mB"><option value="u">Upper</option><option value="d">Lower</option></select>
+      <label>Row</label><select id="mR"></select>
+      <label>Side</label><select id="mS"><option value="left">Left</option><option value="right">Right</option></select>
+      <label>Owner</label><input id="mO">
+      <label>Icon</label>
+      <div class="iup" id="mIA"><span id="mIP">+</span><input type="file" id="mIF" accept="image/*"></div>
+      <input type="hidden" id="mID" value=""><input type="hidden" id="mEID" value="">
+      <div class="mactions"><button class="btn-sm btn-n" onclick="closeMod()">Cancel</button><button class="btn-sm btn-a" id="mSave" onclick="saveFrame()">Add</button></div>
+    </div>
+  </div>
+
+  <div class="img-ov" id="imgOv" onclick="this.classList.remove('open')"><img id="imgOvI"></div>
+
+  <script>
+    const DB = 'p_fleet', DBV = 15;
+    let db = null;
+    const $ = id => document.getElementById(id);
+    const VI = { 'Lam Research': '⬡', 'TEL': '○', 'Other': '◆' };
+    const VC = { 'Lam Research': 'lam', 'TEL': 'tel', 'Other': 'other' };
+    const SUBSYS = ['vacuum', 'gas', 'rf_plasma', 'thermal', 'mechanical'];
+
+    const mkF = d => ({
+      id: d[0], name: d[1], vendor: d[2], building: d[3], row: d[4], side: d[5], owner: '', icon: null,
+      notes: [], transferNotes: [], posY: d[6], tcPos: 4,
+      chambers: [{ id: d[0] + 'c', name: 'Ch A', process: '', gases: '', owner: '', icon: null, notes: [], subsystems: Object.fromEntries(SUBSYS.map(s => [s, []])), gridPos: 1 }]
+    });
+
+    const seedTools = [
+      ['u1', 'Tool U-1', 'Lam Research', 'u', '13', 'left', 8],
+      ['u2', 'Tool U-2', 'TEL', 'u', '13', 'right', 46],
+      ['u3', 'Tool U-3', 'Lam Research', 'u', '14', 'left', 18],
+      ['u4', 'Tool U-4', 'TEL', 'u', '14', 'right', 72],
+      ['d1', 'Tool D-1', 'Lam Research', 'd', '1', 'left', 10],
+      ['d2', 'Tool D-2', 'TEL', 'd', '1', 'right', 48],
+      ['d3', 'Tool D-3', 'Lam Research', 'd', '2', 'left', 24],
+      ['d4', 'Tool D-4', 'TEL', 'd', '2', 'right', 82]
+    ];
+
+    const DEFAULTS = {
+      rows: { u: ['13', '14'], d: ['1', '2'] },
+      ref: {},
+      frames: seedTools.map(mkF)
+    };
+
+    let STATE = JSON.parse(JSON.stringify(DEFAULTS));
+    let recent = [];
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB, DBV);
+        req.onupgradeneeded = e => {
+          const d = e.target.result;
+          if (!d.objectStoreNames.contains('state')) d.createObjectStore('state');
+        };
+        req.onsuccess = e => { db = e.target.result; resolve(); };
+        req.onerror = reject;
+      });
+    }
+
+    function loadState() {
+      return new Promise(resolve => {
+        const tx = db.transaction('state', 'readonly');
+        const q = tx.objectStore('state').get('v15');
+        q.onsuccess = () => { if (q.result) STATE = q.result; resolve(); };
+        q.onerror = () => resolve();
+      });
+    }
+
+    function saveState() {
+      return new Promise(resolve => {
+        const tx = db.transaction('state', 'readwrite');
+        tx.objectStore('state').put(STATE, 'v15');
+        tx.oncomplete = () => resolve();
+      });
+    }
+
+    function md(t) {
+      if (!t) return '';
+      return t
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function viewImg(s) { $('imgOvI').src = s; $('imgOv').classList.add('open'); }
+
+    function processImg(src, cb) {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        const mx = 300;
+        let w = img.width, h = img.height;
+        if (w > h && w > mx) { h = h * mx / w; w = mx; }
+        else if (h >= w && h > mx) { w = w * mx / h; h = mx; }
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL('image/jpeg', .7));
+      };
+      img.src = src;
+    }
+
+    function handleIcon(ev, cb) {
+      const f = ev.target.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = e => processImg(e.target.result, cb);
+      rd.readAsDataURL(f);
+    }
+
+    function blobToImg(blob, cb) {
+      const rd = new FileReader();
+      rd.onload = e => processImg(e.target.result, cb);
+      rd.readAsDataURL(blob);
+    }
+
+    function shortD(d) {
+      return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    }
+
+    let _nArr = null, _nRefresh = null;
+    function bindN(arr, fn) { _nArr = arr; _nRefresh = fn; }
+
+    function renderNotes(arr) {
+      if (!arr?.length) return '<div class="note-empty">No notes yet</div>';
+      return arr.map((n, i) => {
+        if (!n.images) n.images = n.image ? [n.image] : [];
+        const imgs = n.images.length ? `<div class="np-imgs">${n.images.map((src, j) => `<div class="np-img-item"><img src="${src}" onclick="viewImg(this.src)"><div class="np-img-del" onclick="event.stopPropagation();rmNImg(${i},${j})">✕</div>${j > 0 ? `<div class="np-img-mv np-mv-up" onclick="event.stopPropagation();mvNImg(${i},${j},-1)">▲</div>` : ''}${j < n.images.length - 1 ? `<div class="np-img-mv np-mv-dn" onclick="event.stopPropagation();mvNImg(${i},${j},1)">▼</div>` : ''}</div>`).join('')}</div>` : '';
+        return `<div class="np" data-ni="${i}">${imgs}<div class="np-right"><div class="np-text" id="npt_${i}">${md(n.text)}</div><div class="np-meta"><span>${shortD(n.edited || n.date)}</span><span><span onclick="addImgToNote(${i})">+img</span> <span onclick="editN(${i})">edit</span> <span class="del" onclick="if(confirm('Delete?')){_nArr.splice(${i},1);saveState();_nRefresh?.();}">del</span></span></div></div></div>`;
+      }).join('');
+    }
+
+    function rmNImg(ni, ii) { if (!_nArr) return; _nArr[ni].images.splice(ii, 1); saveState(); _nRefresh?.(); }
+    function mvNImg(ni, ii, dir) {
+      if (!_nArr) return;
+      const imgs = _nArr[ni].images; const nj = ii + dir;
+      if (nj < 0 || nj >= imgs.length) return;
+      [imgs[ii], imgs[nj]] = [imgs[nj], imgs[ii]];
+      saveState(); _nRefresh?.();
+    }
+
+    function addImgToNote(ni) {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+      inp.onchange = e => handleIcon(e, d => { if (!_nArr[ni].images) _nArr[ni].images = []; _nArr[ni].images.push(d); saveState(); _nRefresh?.(); });
+      inp.click();
+    }
+
+    function editN(i) {
+      const el = $('npt_' + i); if (!el || el.querySelector('.np-edit-ta')) return;
+      const n = _nArr[i];
+      el.innerHTML = `<textarea class="np-edit-ta" id="neta_${i}">${n.text || ''}</textarea><div class="np-edit-bar"><span class="hint">**bold** *italic* \`code\` · Ctrl+V paste img</span><button class="btn-sm btn-a" onclick="saveN(${i})">✓</button><button class="btn-sm btn-n" onclick="_nRefresh?.()">✕</button></div>`;
+      $('neta_' + i)?.focus();
+    }
+
+    window.saveN = function(i) {
+      const ta = $('neta_' + i); if (!ta) return;
+      _nArr[i].text = ta.value; _nArr[i].edited = new Date().toISOString(); saveState(); _nRefresh?.();
+    };
+
+    function addNote() {
+      if (!_nArr) return;
+      _nArr.push({ id: 'n' + Date.now(), text: '', images: [], date: new Date().toISOString() });
+      saveState(); _nRefresh?.();
+      setTimeout(() => editN(_nArr.length - 1), 0);
+    }
+
+    function addNoteImg() {
+      if (!_nArr) return;
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+      inp.onchange = e => handleIcon(e, d => {
+        _nArr.push({ id: 'n' + Date.now(), text: '', images: [d], date: new Date().toISOString() });
+        saveState(); _nRefresh?.(); setTimeout(() => editN(_nArr.length - 1), 0);
+      });
+      inp.click();
+    }
+
+    document.addEventListener('paste', e => {
+      const active = document.activeElement;
+      if (!active?.classList.contains('np-edit-ta')) return;
+      const items = e.clipboardData?.items; if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const idx = parseInt(active.id.replace('neta_', ''));
+          if (!isNaN(idx) && _nArr?.[idx]) {
+            _nArr[idx].text = active.value;
+            _nArr[idx].edited = new Date().toISOString();
+            blobToImg(item.getAsFile(), d => {
+              if (!_nArr[idx].images) _nArr[idx].images = [];
+              _nArr[idx].images.push(d);
+              saveState(); _nRefresh?.(); setTimeout(() => editN(idx), 0);
+            });
+          }
+          return;
+        }
+      }
+    });
+
+    function goMap() { location.hash = '#/map'; }
+    function nav(h) { location.hash = h; }
+
+    function route() {
+      const h = location.hash || '#/map';
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#nav a').forEach(a => {
+        a.classList.toggle('active', h.startsWith('#/' + a.dataset.r));
+      });
+      if (h === '#/map' || h === '#/') { $('pageMap').classList.add('active'); renderMap(); }
+      else if (h.startsWith('#/frame/')) { $('pageFrame').classList.add('active'); renderFrame(h.split('/')[2]); }
+      else if (h.startsWith('#/chamber/')) { $('pageChamber').classList.add('active'); renderChamber(h.split('/')[2], h.split('/')[3]); }
+      else if (h === '#/ref') { $('pageRef').classList.add('active'); renderRef(); }
+      else if (h === '#/settings') { $('pageSettings').classList.add('active'); }
+      else if (h === '#/search') { $('pageSearch').classList.add('active'); }
+    }
+
+    function renderMap() {
+      ['u', 'd'].forEach(b => {
+        const ra = $('ra' + b); ra.innerHTML = '';
+        (STATE.rows[b] || []).slice().sort((a, c) => parseInt(a) - parseInt(c)).forEach(rn => {
+          const col = document.createElement('div'); col.className = 'rc';
+          const nd = document.createElement('div'); nd.className = 'rn';
+          nd.innerHTML = `${rn}<span class="rs">Row</span><span class="rx">✕</span>`;
+          nd.querySelector('.rx').addEventListener('click', e => { e.stopPropagation(); removeRow(b, rn); });
+          col.appendChild(nd);
+          const ai = document.createElement('div'); ai.className = 'ai';
+          const ls = document.createElement('div'); ls.className = 'as ls';
+          const ct = document.createElement('div'); ct.className = 'ac2';
+          const rs = document.createElement('div'); rs.className = 'as rs2';
+          ai.appendChild(ls); ai.appendChild(ct); ai.appendChild(rs); col.appendChild(ai); ra.appendChild(col);
+          STATE.frames.filter(f => f.building === b && f.row === rn).forEach(f => { (f.side === 'right' ? rs : ls).appendChild(makeTile(f)); });
+        });
+      });
+      renderRecent();
+    }
+
+    function makeTile(f) {
+      const t = document.createElement('div'); t.className = 't'; t.style.top = (f.posY || 4) + 'px';
+      if (f.icon) t.innerHTML = `<img class="ti" src="${f.icon}"><div class="tn">${f.name}</div>`;
+      else {
+        const c = VC[f.vendor] || 'other';
+        t.innerHTML = `<div class="tph ${c}"><span class="ticon">${VI[f.vendor] || '◆'}</span></div><div class="tn">${f.name}</div><div class="tv">${(f.vendor || 'Other').split(' ')[0]}</div>`;
+      }
+      makeDrag(t, f);
+      return t;
+    }
+
+    function makeDrag(tile, frame) {
+      let oy, sy, dragging = false, lc = 0;
+      tile.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const r = tile.getBoundingClientRect(); oy = e.clientY - r.top; sy = e.clientY; dragging = false;
+        tile.setPointerCapture(e.pointerId); tile.classList.add('dragging');
+        const onM = ev => {
+          if (!dragging && Math.abs(ev.clientY - sy) > 3) dragging = true;
+          if (!dragging) return;
+          const par = tile.parentElement, pr = par.getBoundingClientRect();
+          let ny = ev.clientY - pr.top - oy;
+          ny = Math.max(2, Math.min(ny, pr.height - tile.offsetHeight - 1));
+          ny = Math.round(ny / 2) * 2;
+          tile.style.top = ny + 'px';
+        };
+        const onU = () => {
+          tile.classList.remove('dragging');
+          tile.removeEventListener('pointermove', onM);
+          tile.removeEventListener('pointerup', onU);
+          if (dragging) {
+            frame.posY = parseInt(tile.style.top, 10); saveState();
+          } else {
+            const now = Date.now();
+            if (now - lc < 400) { addRecent(frame); nav('#/frame/' + frame.id); lc = 0; }
+            else { lc = now; showInsp(frame); }
+          }
+        };
+        tile.addEventListener('pointermove', onM); tile.addEventListener('pointerup', onU);
+      });
+    }
+
+    function addRow(b) {
+      const n = prompt('Row number:'); if (!n?.trim()) return;
+      const v = n.trim();
+      if (!STATE.rows[b]) STATE.rows[b] = [];
+      if (STATE.rows[b].includes(v)) { alert('Exists'); return; }
+      STATE.rows[b].push(v); saveState(); renderMap();
+    }
+
+    function removeRow(b, r) {
+      if (!confirm('Remove row ' + r + '?')) return;
+      STATE.rows[b] = STATE.rows[b].filter(x => x !== r);
+      STATE.frames = STATE.frames.filter(f => !(f.building === b && f.row === r));
+      saveState(); renderMap();
+    }
+
+    function showInsp(f) {
+      const ow = [...new Set(f.chambers.map(c => c.owner).filter(Boolean))];
+      $('infoB').innerHTML = `<div class="inp-fn">${f.name}</div><span class="inp-v">${f.vendor}</span>${f.icon ? `<img class="inp-img" src="${f.icon}">` : ''}<div class="inp-row"><span class="l">Area</span><span class="v">${f.building === 'u' ? 'Upper' : 'Lower'}</span></div><div class="inp-row"><span class="l">Row/Side</span><span class="v">R${f.row} ${(f.side || '')[0]?.toUpperCase() || ''}</span></div><div class="inp-row"><span class="l">Owner(s)</span><span class="v">${ow.length ? ow.join(', ') : f.owner || '—'}</span></div><div class="inp-sect">Chambers (${f.chambers.length})</div>${f.chambers.map(c => `<div class="inp-ch"><span class="n">${c.name}${c.owner ? ' · ' + c.owner : ''}</span></div>`).join('')}`;
+    }
+
+    function addRecent(f) { recent = recent.filter(r => r.id !== f.id); recent.unshift({ id: f.id, name: f.name }); if (recent.length > 10) recent.pop(); renderRecent(); }
+    function renderRecent() {
+      const c = $('recentC');
+      if (!recent.length) { c.innerHTML = '<span class="rnone">—</span>'; return; }
+      c.innerHTML = recent.map(r => `<div class="rch" onclick="nav('#/frame/${r.id}')">${r.name}</div>`).join('');
+    }
+
+    let _cf = null;
+    function rF() { renderFrame(_cf?.id); }
+    function renderFrame(fid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) { goMap(); return; }
+      _cf = f;
+      if (!Array.isArray(f.notes)) f.notes = [];
+      if (!Array.isArray(f.transferNotes)) f.transferNotes = [];
+      if (f.tcPos == null) f.tcPos = 4;
+      let hero = f.icon ? `<img class="fp-img" src="${f.icon}" onclick="upIcon('${fid}')">` : `<div class="fp-ph" id="fhUp"><span class="phi">${VI[f.vendor] || '◆'}</span>Upload<input type="file" accept="image/*" style="display:none" id="fhIn"></div>`;
+      const slots = Array(12).fill(null);
+      slots[f.tcPos] = 'TC';
+      f.chambers.forEach(c => { const p = c.gridPos != null ? c.gridPos : 0; if (p < 12 && slots[p] === null) slots[p] = c; });
+      const diagHTML = slots.map((s, i) => {
+        if (s === 'TC') return `<div class="cslot is-tc" onclick="moveTCTo(${i})">TC</div>`;
+        if (s) return `<div class="cslot has-ch" onclick="nav('#/chamber/${f.id}/${s.id}')">${s.icon ? `<img class="cdb-img" src="${s.icon}">` : ''}<div class="cdb-n">${s.name}</div><div class="cdb-p">${s.process || '—'}</div></div>`;
+        return `<div class="cslot" onclick="addChOrMoveTC('${f.id}',${i})">+</div>`;
+      }).join('');
+
+      bindN(f.notes, rF);
+      $('frameDet').innerHTML = `<div class="fp-left"><div class="fp-card">${hero}<div class="fp-info"><h1>${f.name}</h1><span class="fmv">${f.vendor}</span><div class="fp-irow"><span class="l">Area</span><span class="v">${f.building === 'u' ? 'Upper' : 'Lower'}</span></div><div class="fp-irow"><span class="l">Row/Side</span><span class="v">R${f.row} ${(f.side || '').toUpperCase()}</span></div><div class="fp-irow"><span class="l">Owner</span><span class="v">${f.owner || '—'}</span></div><div class="fp-actions"><button class="btn-sm btn-a" onclick="openMod('${_cf.id}')">Edit</button><button class="btn-sm btn-n" onclick="upIcon('${_cf.id}')">Icon</button><button class="btn-sm btn-d" onclick="delFrame('${_cf.id}')">Del</button></div></div></div><div class="shdr">Chamber Layout <span class="abtn" onclick="addChFree('${f.id}')">+Ch</span></div><div class="cdiag">${diagHTML}</div><div style="font-size:10px;color:var(--dm);margin-top:4px;">Click + to add chamber. Type TC to move transfer chamber.</div></div><div class="fp-right"><div class="shdr">Frame Notes <span class="abtn" onclick="bindN(_cf.notes,rF);addNote()">+ Note</span> <span class="abtn" onclick="bindN(_cf.notes,rF);addNoteImg()">+ Img</span></div><div id="fnN" onclick="bindN(_cf.notes,rF)">${renderNotes(f.notes)}</div><div class="shdr">Transfer Chamber <span class="abtn" onclick="bindN(_cf.transferNotes,rF);addNote()">+ Note</span> <span class="abtn" onclick="bindN(_cf.transferNotes,rF);addNoteImg()">+ Img</span></div><div id="ftnN" onclick="bindN(_cf.transferNotes,rF)">${renderNotes(f.transferNotes)}</div></div>`;
+
+      const up = $('fhUp'), inp = $('fhIn');
+      if (up && inp) { up.onclick = () => inp.click(); inp.onchange = e => handleIcon(e, d => { f.icon = d; saveState(); rF(); }); }
+    }
+
+    window.moveTCTo = function(pos) { if (!_cf) return; _cf.tcPos = pos; saveState(); rF(); };
+    window.addChOrMoveTC = function(fid, pos) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      const n = prompt('Chamber name (or type "TC" to move transfer chamber here):');
+      if (!n) return;
+      if (n.toUpperCase() === 'TC') { f.tcPos = pos; saveState(); rF(); return; }
+      f.chambers.push({ id: 'c' + Date.now(), name: n, process: '', gases: '', owner: '', icon: null, notes: [], subsystems: Object.fromEntries(SUBSYS.map(s => [s, []])), gridPos: pos });
+      saveState(); rF();
+    };
+    window.addChFree = function(fid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      const n = prompt('Chamber name:'); if (!n) return;
+      const slots = Array(12).fill(false); slots[f.tcPos || 4] = true; f.chambers.forEach(c => { if (c.gridPos != null) slots[c.gridPos] = true; });
+      const free = slots.findIndex(x => !x);
+      f.chambers.push({ id: 'c' + Date.now(), name: n, process: '', gases: '', owner: '', icon: null, notes: [], subsystems: Object.fromEntries(SUBSYS.map(s => [s, []])), gridPos: free >= 0 ? free : 0 });
+      saveState(); rF();
+    };
+
+    function upIcon(fid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+      i.onchange = e => handleIcon(e, d => { f.icon = d; saveState(); rF(); }); i.click();
+    }
+
+    function delFrame(fid) {
+      if (!confirm('Delete?')) return;
+      STATE.frames = STATE.frames.filter(f => f.id !== fid); saveState(); goMap();
+    }
+
+    let _cc = null, _ccfid = null;
+    function rC() { renderChamber(_ccfid, _cc?.id); }
+    function renderChamber(fid, cid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) { goMap(); return; }
+      const c = f.chambers.find(x => x.id === cid); if (!c) { nav('#/frame/' + fid); return; }
+      _cc = c; _ccfid = fid; $('chBack').onclick = () => nav('#/frame/' + fid);
+      if (!Array.isArray(c.notes)) c.notes = [];
+      SUBSYS.forEach(s => { if (!Array.isArray(c.subsystems[s])) c.subsystems[s] = []; });
+      let hero = c.icon ? `<img class="cp-img" src="${c.icon}" onclick="upChI('${fid}','${cid}')">` : `<div class="cp-ph" onclick="upChI('${fid}','${cid}')">+ Photo</div>`;
+      bindN(c.notes, rC);
+      $('chambDet').innerHTML = `<div class="cp-left"><div class="cp-card">${hero}<div style="font-size:16px;font-weight:700;color:var(--br);margin-top:6px;">${f.name} → ${c.name}</div><div class="cp-fields"><div class="cp-fl"><span>Process</span><input id="cP" value="${c.process || ''}"></div><div class="cp-fl"><span>Gases</span><input id="cG" value="${c.gases || ''}"></div><div class="cp-fl"><span>Owner</span><input id="cOwn" value="${c.owner || ''}"></div></div><button class="btn-sm btn-a" onclick="saveCF('${fid}','${cid}')" style="margin-top:6px;">Save</button> <button class="btn-sm btn-d" onclick="delCh('${fid}','${cid}')" style="margin-top:6px;">Del Chamber</button></div><div class="shdr">General Notes <span class="abtn" onclick="bindN(_cc.notes,rC);addNote()">+ Note</span> <span class="abtn" onclick="bindN(_cc.notes,rC);addNoteImg()">+ Img</span></div><div id="cnN" onclick="bindN(_cc.notes,rC)">${renderNotes(c.notes)}</div></div><div class="cp-right"><div class="shdr">Subsystems</div><div class="sub-jumps">${SUBSYS.map(s => `<div class="sub-jump" onclick="document.getElementById('sub_${s}').scrollIntoView({behavior:'smooth'})">${s}</div>`).join('')}</div>${SUBSYS.map(s => `<div class="sub-block" id="sub_${s}"><div class="sub-block-hdr">${s}<span class="abtn" onclick="bindN(_cc.subsystems['${s}'],rC);addNote()">+ Note</span> <span class="abtn" onclick="bindN(_cc.subsystems['${s}'],rC);addNoteImg()">+ Img</span></div><div class="sub-inner" onclick="bindN(_cc.subsystems['${s}'],rC)">${renderNotes(c.subsystems[s])}</div></div>`).join('')}</div>`;
+    }
+
+    function upChI(fid, cid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      const c = f.chambers.find(x => x.id === cid); if (!c) return;
+      const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+      i.onchange = e => handleIcon(e, d => { c.icon = d; saveState(); rC(); }); i.click();
+    }
+
+    function saveCF(fid, cid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      const c = f.chambers.find(x => x.id === cid); if (!c) return;
+      c.process = $('cP').value; c.gases = $('cG').value; c.owner = $('cOwn').value; saveState();
+    }
+
+    function delCh(fid, cid) {
+      if (!confirm('Delete?')) return;
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      f.chambers = f.chambers.filter(c => c.id !== cid); saveState(); nav('#/frame/' + fid);
+    }
+
+    let curRef = SUBSYS[0];
+    function renderRef() {
+      if (!STATE.ref) STATE.ref = {};
+      $('refTabs').innerHTML = SUBSYS.map((s, i) => `<div class="ref-tab ${s === curRef ? 'active' : ''}" data-k="${s}">${s}</div>`).join('');
+      $('refTA').value = STATE.ref[curRef] || '';
+      document.querySelectorAll('.ref-tab').forEach(tab => {
+        tab.onclick = () => {
+          STATE.ref[curRef] = $('refTA').value; saveState();
+          curRef = tab.dataset.k; renderRef();
+        };
+      });
+      let rt;
+      $('refTA').oninput = () => { clearTimeout(rt); rt = setTimeout(() => { STATE.ref[curRef] = $('refTA').value; saveState(); }, 600); };
+    }
+
+    function exportData() {
+      const b = new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'p-fleet-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function importData(ev) {
+      const f = ev.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed || !Array.isArray(parsed.frames) || !parsed.rows) throw new Error('Bad schema');
+          STATE = parsed; saveState(); location.reload();
+        } catch {
+          alert('Invalid backup file');
+        }
+      };
+      rd.readAsText(f); ev.target.value = '';
+    }
+
+    function factoryReset() {
+      if (!confirm('Wipe ALL?')) return;
+      if (!confirm('Sure?')) return;
+      STATE = JSON.parse(JSON.stringify(DEFAULTS)); saveState(); location.reload();
+    }
+
+    function populateRows(b) {
+      const s = $('mR'); s.innerHTML = '';
+      (STATE.rows[b] || []).slice().sort((a, c) => parseInt(a) - parseInt(c)).forEach(r => {
+        const o = document.createElement('option'); o.value = r; o.textContent = 'R' + r; s.appendChild(o);
+      });
+    }
+
+    function openModNew(b) {
+      $('addM').classList.add('open');
+      $('mT').textContent = 'Add Frame'; $('mSave').textContent = 'Add'; $('mN').value = '';
+      $('mV').value = 'Lam Research'; $('mB').value = b || 'u'; $('mO').value = ''; $('mID').value = ''; $('mEID').value = ''; $('mS').value = 'left';
+      $('mIP').style.display = '';
+      const ex = $('mIA').querySelector('img'); if (ex) ex.remove();
+      populateRows($('mB').value);
+    }
+
+    $('mB').addEventListener('change', () => populateRows($('mB').value));
+
+    function openMod(fid) {
+      const f = STATE.frames.find(x => x.id === fid); if (!f) return;
+      $('addM').classList.add('open'); $('mT').textContent = 'Edit'; $('mSave').textContent = 'Save';
+      $('mN').value = f.name; $('mV').value = f.vendor; $('mB').value = f.building; $('mO').value = f.owner || ''; $('mID').value = f.icon || ''; $('mEID').value = f.id; $('mS').value = f.side || 'left';
+      populateRows(f.building); $('mR').value = f.row || '';
+      const ex = $('mIA').querySelector('img'); if (ex) ex.remove();
+      if (f.icon) { $('mIP').style.display = 'none'; const img = document.createElement('img'); img.src = f.icon; $('mIA').appendChild(img); }
+      else $('mIP').style.display = '';
+    }
+
+    function closeMod() { $('addM').classList.remove('open'); }
+
+    function saveFrame() {
+      const name = $('mN').value.trim(); if (!name) { alert('Name required'); return; }
+      const eid = $('mEID').value;
+      const data = { name, vendor: $('mV').value, building: $('mB').value, row: $('mR').value, side: $('mS').value, owner: $('mO').value.trim(), icon: $('mID').value || null };
+      if (eid) {
+        const f = STATE.frames.find(x => x.id === eid); if (f) Object.assign(f, data);
+      } else {
+        STATE.frames.push({ id: 'f' + Date.now(), ...data, notes: [], transferNotes: [], posY: 4, tcPos: 4, chambers: [] });
+      }
+      saveState(); closeMod(); if (eid) rF(); else { goMap(); setTimeout(renderMap, 0); }
+    }
+
+    $('mIA').onclick = () => $('mIF').click();
+    $('mIF').onchange = e => handleIcon(e, d => {
+      $('mID').value = d; $('mIP').style.display = 'none';
+      const ex = $('mIA').querySelector('img'); if (ex) ex.remove();
+      const img = document.createElement('img'); img.src = d; $('mIA').appendChild(img);
+    });
+
+    function openS() { $('sov').classList.add('open'); $('sinp').value = ''; $('sinp').focus(); $('sres').innerHTML = '<div class="sempty">Type to search</div>'; }
+    function closeS() { $('sov').classList.remove('open'); }
+    $('sTrig').onclick = openS;
+    $('sov').onclick = e => { if (e.target === $('sov')) closeS(); };
+    $('sinp').oninput = e => {
+      const q = e.target.value.toLowerCase().trim(); const res = $('sres');
+      if (!q) { res.innerHTML = '<div class="sempty">Type to search</div>'; return; }
+      let h = [];
+      STATE.frames.forEach(f => {
+        const ft = [f.name, f.vendor, f.owner, ...(f.notes || []).map(n => n.text), ...(f.transferNotes || []).map(n => n.text)].join(' ').toLowerCase();
+        if (ft.includes(q)) h.push({ type: 'frame', nm: f.name, dt: `${f.building === 'u' ? 'Upper' : 'Lower'} R${f.row}`, href: '#/frame/' + f.id });
+        f.chambers.forEach(c => {
+          const ct = [c.name, c.process, c.gases, c.owner || '', ...(c.notes || []).map(n => n.text), ...SUBSYS.flatMap(s => (c.subsystems[s] || []).map(n => n.text))].join(' ').toLowerCase();
+          if (ct.includes(q)) h.push({ type: 'chamber', nm: `${f.name}→${c.name}`, dt: c.process || '', href: `#/chamber/${f.id}/${c.id}` });
+        });
+      });
+      if (!h.length) { res.innerHTML = '<div class="sempty">No results</div>'; return; }
+      res.innerHTML = h.map(x => `<div class="sr" onclick="closeS();nav('${x.href}')"><span class="srt ${x.type}">${x.type}</span><div class="sri"><div class="srn">${x.nm}</div><div class="srd">${x.dt}</div></div></div>`).join('');
+    };
+
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openS(); }
+      if (e.key === 'Escape') { closeS(); closeMod(); }
+    });
+
+    (async () => {
+      try { await openDB(); await loadState(); } catch (e) { console.error(e); }
+      await saveState(); route(); window.addEventListener('hashchange', route);
+    })();
+  </script>
+</body>
+</html>
